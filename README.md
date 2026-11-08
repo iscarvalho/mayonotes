@@ -5,7 +5,7 @@ A note-taking app where you can **ask questions about your own notes** and get a
 > **About this project**
 > This is a personal study project by **Ítalo Santiago de Carvalho**, built to learn Retrieval-Augmented Generation (RAG) and local-first web apps in practice. It was developed with the assistance of AI (Claude, by Anthropic), which I used as a pair programmer for architecture discussions, code suggestions and debugging. Every decision, integration and line of code in this repository was reviewed, tested and adjusted by me.
 
-**Live demo:** _add your Vercel URL here_
+**Live demo:** https://mayonotes.vercel.app/
 
 ![Demo](./docs/demo.gif)
 <!-- Record a short GIF: create a note, search for it with different words, ask a question and click the cited source. -->
