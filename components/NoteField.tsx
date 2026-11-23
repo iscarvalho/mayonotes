@@ -9,7 +9,8 @@ import ModelStatusBar from '@/components/ModelStatusBar';
 import type { SearchResult } from '@/lib/search';
 
 export default function NoteEditor() {
-  const { notes, loading, error, createNote, updateNote, deleteNote, search } = useNotes();
+  const { notes, loading, error, createNote, updateNote, deleteNote, search, loadSampleNotes } = useNotes();
+  const [loadingSamples, setLoadingSamples] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [content, setContent] = useState('');
   const [query, setQuery] = useState('');
@@ -215,6 +216,19 @@ export default function NoteEditor() {
             >
               + Nova nota
             </button>
+            {notes.length === 0 && (
+              <button
+                disabled={loadingSamples}
+                onClick={async () => {
+                  setLoadingSamples(true);
+                  try { await loadSampleNotes(); } catch (err) { console.error(err); }
+                  finally { setLoadingSamples(false); }
+                }}
+                className="text-sm underline hover:text-brand disabled:opacity-50"
+              >
+                {loadingSamples ? 'Carregando notas de exemplo...' : 'ou carregue 20 notas de exemplo'}
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDb } from './useDb';
 import { indexNote, searchNotes } from '../lib/search';
+import { SAMPLE_NOTES } from '../lib/sampleNotes';
 
 export type Note = { id: string; title: string; content: string; updated_at: Date };
 
@@ -69,8 +70,24 @@ export function useNotes() {
     await refresh();
   }, [db, refresh]);
 
+  // Insere as notas de exemplo e indexa uma por vez (o modelo roda num único worker)
+  const loadSampleNotes = useCallback(async () => {
+    const inserted: { id: string; title: string; content: string }[] = [];
+    for (let i = 0; i < SAMPLE_NOTES.length; i++) {
+      const content = SAMPLE_NOTES[i];
+      const r = await db!.query<{ id: string }>(
+        `INSERT INTO notes (title, content, updated_at)
+         VALUES ($1, $2, now() - $3 * interval '1 hour') RETURNING id`,
+        [extractTitle(content), content, i]
+      );
+      inserted.push({ id: r.rows[0].id, title: extractTitle(content), content });
+    }
+    await refresh();
+    for (const n of inserted) await indexNote(db!, n.id, n.title, n.content);
+  }, [db, refresh]);
+
   // NOVO: busca semântica
   const search = useCallback((q: string) => searchNotes(db!, q), [db]);
 
-  return { notes, loading, error, createNote, updateNote, deleteNote, search };
+  return { notes, loading, error, createNote, updateNote, deleteNote, search, loadSampleNotes };
 }

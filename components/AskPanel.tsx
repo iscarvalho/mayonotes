@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { SearchResult } from '@/lib/search';
-import { streamAnswer } from '@/lib/llm';
+import { PROVIDERS, streamAnswer, type Provider } from '@/lib/llm';
 import { useApiKey } from '@/hooks/useApiKey';
 
 type Props = {
@@ -14,6 +14,7 @@ type Props = {
 export default function AskPanel({ search, onOpenNote }: Props) {
   const { apiKey, setApiKey } = useApiKey();
   const [keyInput, setKeyInput] = useState('');
+  const [providerInput, setProviderInput] = useState<Provider>('deepseek');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [sources, setSources] = useState<SearchResult[]>([]);
@@ -43,7 +44,8 @@ export default function AskPanel({ search, onOpenNote }: Props) {
 
       setStatus('answering');
       await streamAnswer({
-        apiKey,
+        provider: apiKey.provider,
+        apiKey: apiKey.key,
         question,
         sources: found,
         signal: controller.signal,
@@ -62,21 +64,42 @@ export default function AskPanel({ search, onOpenNote }: Props) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (keyInput.trim()) setApiKey(keyInput.trim());
+            if (keyInput.trim()) setApiKey({ provider: providerInput, key: keyInput.trim() });
           }}
           className="w-full max-w-md space-y-3"
         >
-          <h2 className="font-semibold">Configure sua chave da Anthropic</h2>
+          <h2 className="font-semibold">Configure sua chave de API</h2>
           <p className="text-sm text-muted">
-            A chave fica salva só neste navegador e é enviada direto para a API da Anthropic.
+            A chave fica salva só neste navegador e é enviada direto para a API do provedor escolhido.
           </p>
+          <div className="flex gap-2">
+            {(Object.keys(PROVIDERS) as Provider[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setProviderInput(p)}
+                aria-pressed={providerInput === p}
+                className={`rounded-md border px-3 py-1.5 text-sm ${
+                  providerInput === p ? 'border-brand text-brand' : 'border-line text-muted hover:text-ink'
+                }`}
+              >
+                {PROVIDERS[p].label}
+              </button>
+            ))}
+          </div>
           <input
             type="password"
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="sk-ant-..."
+            placeholder={PROVIDERS[providerInput].placeholder}
             className="w-full rounded-md border border-line bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-brand"
           />
+          <p className="text-xs text-muted">
+            Não tem uma chave?{' '}
+            <a href={PROVIDERS[providerInput].keyUrl} target="_blank" rel="noreferrer" className="underline hover:text-brand">
+              Crie uma na {PROVIDERS[providerInput].label}
+            </a>
+          </p>
           <button className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-black hover:brightness-90">
             Salvar
           </button>
@@ -130,7 +153,7 @@ export default function AskPanel({ search, onOpenNote }: Props) {
       </div>
 
       <footer className="border-t border-line px-4 py-2 text-xs text-muted">
-        Chave salva só neste navegador ·{' '}
+        {PROVIDERS[apiKey.provider].label} ({PROVIDERS[apiKey.provider].model}) · chave salva só neste navegador ·{' '}
         <button onClick={() => setApiKey(null)} className="underline hover:text-brand">
           remover
         </button>

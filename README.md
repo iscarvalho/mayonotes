@@ -5,10 +5,9 @@ A note-taking app where you can **ask questions about your own notes** and get a
 > **About this project**
 > This is a personal study project by **Ítalo Santiago de Carvalho**, built to learn Retrieval-Augmented Generation (RAG) and local-first web apps in practice. It was developed with the assistance of AI (Claude, by Anthropic), which I used as a pair programmer for architecture discussions, code suggestions and debugging. Every decision, integration and line of code in this repository was reviewed, tested and adjusted by me.
 
-**Live demo:** https://mayonotes.vercel.app/
+![Mayonotes demo: semantic search, then a question answered by DeepSeek with cited notes](./docs/demo.gif)
 
-![Demo](./docs/demo.gif)
-<!-- Record a short GIF: create a note, search for it with different words, ask a question and click the cited source. -->
+*Searching "quando levo o carro na oficina?" finds the car maintenance note without sharing its words; asking "O que eu tenho para resolver em setembro?" returns an answer that cites two different notes.*
 
 ---
 
@@ -30,7 +29,7 @@ flowchart LR
         W[Web Worker<br/>Transformers.js]
         DB[(PGlite<br/>pgvector + full-text)]
     end
-    API[Anthropic API<br/>Claude Haiku]
+    API[LLM API<br/>DeepSeek or Claude]
 
     UI -- note saved --> W
     W -- embeddings --> DB
@@ -42,12 +41,12 @@ flowchart LR
 
 1. **Indexing.** When a note is saved, it is split into chunks by headings and paragraphs. A Web Worker turns each chunk into a 384-dimension vector with `multilingual-e5-small`. Chunks and vectors are stored in PGlite (Postgres compiled to WebAssembly), persisted in IndexedDB.
 2. **Search.** A query is embedded the same way and matched two ways: cosine similarity over the vectors (pgvector) and Portuguese full-text search (`tsvector`). Both rankings are merged with Reciprocal Rank Fusion, so exact terms and paraphrases both work.
-3. **Answering.** The top chunks are sent to Claude with instructions to answer only from them and cite each fact as `[1]`, `[2]`. The answer streams back token by token. If no relevant note is found, the app says so without calling the API.
+3. **Answering.** The top chunks are sent to the LLM (DeepSeek or Claude, your choice) with instructions to answer only from them and cite each fact as `[1]`, `[2]`. The answer streams back token by token. If no relevant note is found, the app says so without calling the API.
 
 ## Privacy
 
 - Your notes and the search index **never leave your browser**.
-- The **Ask** feature is the only exception: it sends your question and the few most relevant note excerpts to the Anthropic API, using **your own API key**.
+- The **Ask** feature is the only exception: it sends your question and the few most relevant note excerpts to the provider you pick (DeepSeek or Anthropic), using **your own API key**. Requests go straight from your browser to the provider; there is no server in between.
 - The API key is stored only in your browser's `localStorage`, and you can remove it at any time.
 - The app requests [persistent storage](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist) so the browser does not clear your notes when disk space runs low.
 
@@ -59,7 +58,7 @@ flowchart LR
 | Styling | Tailwind CSS v4, `@tailwindcss/typography`, `next-themes` |
 | Database | PGlite with `pgvector`, stored in IndexedDB |
 | Embeddings | Transformers.js, `Xenova/multilingual-e5-small` (quantized), in a Web Worker |
-| Generation | Anthropic Messages API (Claude Haiku), streamed over SSE with plain `fetch` |
+| Generation | DeepSeek (`deepseek-chat`, OpenAI-compatible API) or Anthropic Messages API (Claude Haiku), streamed over SSE with plain `fetch` |
 | Markdown | `react-markdown` |
 
 ## Getting started
@@ -73,7 +72,9 @@ npm run dev
 
 Open http://localhost:3000. The first load downloads the embedding model (a few dozen MB); after that it is served from the browser cache.
 
-To use **Ask**, you need an Anthropic API key from [console.anthropic.com](https://console.anthropic.com). Paste it in the app when prompted.
+To try it right away, click **"ou carregue 20 notas de exemplo"** on the empty screen. It loads 20 sample notes (a trip, meetings, recipes, finances, study notes) and indexes them for search.
+
+To use **Ask**, you need an API key from either [DeepSeek](https://platform.deepseek.com/api_keys) or [Anthropic](https://console.anthropic.com). Pick the provider and paste the key in the app when prompted.
 
 ## Project structure
 
