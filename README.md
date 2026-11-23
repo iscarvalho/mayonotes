@@ -64,7 +64,7 @@ flowchart LR
 ## Getting started
 
 ```bash
-git clone https://github.com/<your-username>/mayonotes.git
+git clone https://github.com/iscarvalho/mayonotes.git
 cd mayonotes
 npm install
 npm run dev
